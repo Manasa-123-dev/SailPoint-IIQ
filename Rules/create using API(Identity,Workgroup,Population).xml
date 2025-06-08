@@ -1,0 +1,62 @@
+
+//*******CREATE WORKGROUP
+import sailpoint.object.Identity;
+  import sailpoint.object.Application;
+  import sailpoint.api.SailPointContext;
+ // Application app = context.getObjectByName(Application.class, "PRISM");
+  Identity wg = new Identity();
+  wg.setWorkgroup(true);
+
+  wg.setName("Demo " + "AD");
+  wg.setDescription("Demo WorkGroup created from Run rule " +"AD");
+
+  context.saveObject(wg);
+ // context.saveObject(app);
+  context.commitTransaction();
+  
+  //*** CREATE POPULATION
+  import sailpoint.object.*;
+
+         import sailpoint.api.*;
+
+        GroupDefinition pop=new GroupDefinition();
+
+      
+
+        pop.setName("AD population with loc=A");
+
+        Identity iden=context.getObjectByName(Identity.class, "spadmin");      
+
+        pop.setOwner(iden);
+
+      
+
+        pop.setDisabled(false);
+
+      
+
+        pop.setFilter(Filter.eq("links.application.name", "AD"));
+
+        pop.setFilter(Filter.eq("department","A"));
+
+        context.saveObject(pop);
+
+        context.commitTransaction();
+    
+	//******CREATE IDENTITY
+	
+	import sailpoint.object.Identity;
+  import sailpoint.api.SailPointContext;
+  import sailpoint.api.SailPointFactory;
+ 
+  //Identity createIdentity() {
+  SailPointContext context = SailPointFactory.getCurrentContext();
+ 
+  Identity newIdentity = new Identity();
+  newIdentity.setName("LeesaManobal");
+    newIdentity.setDisplayName("LeesaManobal");
+    newIdentity.setAttribute("firstname","LeesaManobal");
+    newIdentity.setAttribute("lastname","kumari");
+   newIdentity.setAttribute("department","IT");
+   context.saveObject(newIdentity);
+    context.commitTransaction();

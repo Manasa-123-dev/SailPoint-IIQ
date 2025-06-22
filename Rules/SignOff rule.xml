@@ -52,5 +52,6 @@ import java.util.Map;
     return results;
   }
   results.put ("identity", identity);
+  System.out.println("results");
 return results;</Source>
 </Rule>

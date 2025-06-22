@@ -1,0 +1,91 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule created="1719991391586" id="0a00142490771d7a81907779d56200a0" language="beanshell" name="AFTER RULE_SERVICENOW" type="WebServiceAfterOperationRule">
+  <Description>The Web Services connector will call this rule after performing ANY defined operation. This rule can be used to update the parsed resource object and/or add persistent values to the application's data.
+(See information about what to return for more information)</Description>
+  <Signature returnType="Object">
+    <Inputs>
+      <Argument name="log" type="org.apache.commons.logging.Log">
+        <Description>
+          The log object associated with the SailPointContext.
+        </Description>
+      </Argument>
+      <Argument name="context" type="sailpoint.api.SailPointContext">
+        <Description>
+          A sailpoint.api.SailPointContext object that can be used to query the database if necessary.
+        </Description>
+      </Argument>
+      <Argument name="application">
+        <Description>The application whose data file is being processed.</Description>
+      </Argument>
+      <Argument name="requestEndPoint">
+        <Description>The current request information contain header, body ,response object</Description>
+      </Argument>
+      <Argument name="processedResponseObject">
+        <Description>Response Object processed by the Web services connector</Description>
+      </Argument>
+      <Argument name="rawResponseObject">
+        <Description>Response Object returned from the end system</Description>
+      </Argument>
+      <Argument name="restClient">
+        <Description>REST Client Object</Description>
+      </Argument>
+    </Inputs>
+    <Returns>
+      <Argument name="Map">
+        <Description>A newly created map containing a 'data' key and optionally, a 'connectorStateMap' key.  The 'data' value should be set to a map containing a parsed list of accounts/groups.  
+                The 'connectorStateMap' value can be set to a map containing values that will be persisted to the application definition.
+                </Description>
+      </Argument>
+    </Returns>
+  </Signature>
+  <Source>import org.json.JSONObject;
+import java.util.Map;
+import java.util.HashMap;
+ 
+public Map&lt;String, Object> jsonToMap(String jsonString) {
+    // Create a JSONObject from the string
+    JSONObject jsonObject = new JSONObject(jsonString);
+    
+    // Create a map to hold the JSON data
+    Map&lt;String, Object> map = new HashMap&lt;>();
+    
+    // Iterate through the keys of the JSONObject
+    for (String key : jsonObject.keySet()) {
+        map.put(key, jsonObject.get(key));
+    }
+    
+    return map;
+}
+
+ if(processedResponseObject!=null)
+  {
+    for(Map iterateMap:processedResponseObject)
+    {
+      if (iterateMap != null) {
+                    Set keySet = iterateMap.keySet();
+                    String description1 = (String) iterateMap.get("description");
+                    if (description1!=null) {
+					
+					     Map&lt;String, Object> resultMap = jsonToMap(description1);
+                        String name = (String) resultMap.get("name");
+                        String email = (String) resultMap.get("email");
+                       
+                         System.out.println("email==****"+email);
+						 System.out.println("name===="+name);
+						 iterateMap.put("email",email);
+						 iterateMap.put("name",name);
+						
+                      
+                      
+                    } 
+      }
+      System.out.println("HELLO");
+      newProcessedResponseObject.add(iterateMap);
+    }
+  }
+   
+ Map newMap=new  HashMap();
+  newMap.put("data",newProcessedResponseObject);
+  return newMap;</Source>
+</Rule>

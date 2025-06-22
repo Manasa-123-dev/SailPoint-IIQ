@@ -23,7 +23,7 @@ import sailpoint.object.Identity;
 
       
 
-        pop.setName("AD population with loc=A");
+        pop.setName("AD population with location=A");
 
         Identity iden=context.getObjectByName(Identity.class, "spadmin");      
 
@@ -42,6 +42,8 @@ import sailpoint.object.Identity;
         context.saveObject(pop);
 
         context.commitTransaction();
+		
+		System.out.println("FROM TESTING BRANCH 2");
     
 	//******CREATE IDENTITY
 	

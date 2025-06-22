@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule name="Correlation Rule For Salesforce" type="Correlation">
+  <Description>Correlates based on a calculated username.</Description>
+  <Source><![CDATA[
+import sailpoint.object.ResourceObject;
+import java.util.Map;
+ 
+Map returnMap = new HashMap();
+ 
+String accountEmail= account.getStringAttribute( "Username" );
+ 
+  String[] parts = accountEmail.split("@");
+  String calculatedUsername = parts[0];
+ 
+returnMap.put( "identityAttributeName", "uid");
+returnMap.put( "identityAttributeValue", calculatedUsername );
+ 
+return returnMap;
+
+  ]]></Source>
+</Rule>

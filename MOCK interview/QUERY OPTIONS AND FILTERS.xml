@@ -1,0 +1,287 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule created="1716991035123" id="0a00141f8fc21e83818fc4a406f30251" language="beanshell" modified="1718092952284" name="QUERYOPTIONS" significantModified="1718092952284" type="Workflow">
+  <Description>A rule used by a Workflow to determine a step action or variable value.
+
+    Note that an Attributes map of all variables from the current WorkflowContext, merged with the arguments from the Step, is also passed into the workflow rule.</Description>
+  <Signature returnType="Object">
+    <Inputs>
+      <Argument name="log" type="org.apache.commons.logging.Log">
+        <Description>
+          The log object associated with the SailPointContext.
+        </Description>
+      </Argument>
+      <Argument name="context" type="sailpoint.api.SailPointContext">
+        <Description>
+          A sailpoint.api.SailPointContext object that can be used to query the database if necessary.
+        </Description>
+      </Argument>
+    </Inputs>
+  </Signature>
+  <Source>
+  import sailpoint.object.Rule;
+  import sailpoint.object.Identity;
+  import java.util.List;
+  import java.util.Map;
+  import sailpoint.object.QueryOptions; 
+  import sailpoint.object.Filter;
+  import sailpoint.object.Application;
+  import sailpoint.object.Custom;
+  import sailpoint.object.Links;
+  
+  //****************************CHECK USER ALREADY EXISTS IN IIQ*******************//
+
+  QueryOptions qo=new QueryOptions();
+  qo.addFilter(Filter.eq("name","Zubedha"));
+  int count=context.countObjects(Identity.class,qo);//gives count of users in iiq with name Zubedha
+  //List l=context.getObjects(Identity.class,qo);   //gives the list of identities with name zubedha already existing in iiq
+  System.out.println(count);
+  
+  
+//***********************************
+ // EXclude applications given in custom object  from dropdown in form**********
+  
+   
+ Custom cuObj=context.getObjectByName(Custom.class,"CustomObject");
+ if(cuObj!=null)
+ {
+   List appList=cuObj.get("EXCLUDED APPLICATIONS");
+  
+   QueryOptions qo=new QueryOptions();
+  
+   qo.addFilter((Filter.not(Filter.in("Application.name",appList))));
+  
+  List includedApps=context.getObjects(Application.class,qo);
+  
+  for(Application a:includedApps)
+  {
+  
+  System.out.println("APPLICATIONS ARE"+a.getName());
+  
+  }
+ }
+   QueryOptions qo=new QueryOptions();
+  
+   qo.addFilter(Filter.eq("links.application.name","AD"));
+  
+  List includedApps=context.getObjects(Identity.class,qo);
+  System.out.println(includedApps);
+  
+  //*********************************************************************************************
+  
+  // Filter.isnull------>get identities without managers
+  QueryOptions qoEntUser = new QueryOptions();
+
+Filter f1= Filter.isnull("manager");
+  
+
+qoEntUser.addFilter(f1);
+
+
+List l=context.getObjects(Identity.class,qoEntUser);  //gives the AD ents  os user
+
+for(Identity i:l)
+{
+  System.out.println(i);
+}
+  //***************************************************************************************
+  // Filter to get inactive AD users
+   QueryOptions q=new QueryOptions();
+Filter f =Filter.and(Filter.eq("links.application.name", "Salesforce_new"),
+Filter.eq("inactive",true));//fetching identities which have salesforec_new account and inactive =true(inactive identity not inactive salesforceaccount)
+  q.addFilter(f);
+  List identities=context.getObjects(Identity.class,q);
+  for(Identity i:identities)
+  {
+  System.out.println(i.getName()+":::::");
+  }
+
+  //*****************************************************************************************************
+  
+  //Get AD ents of User using filter
+  
+  String identityName = "Younus";
+
+Identity identityObject = context.getObjectByName(Identity.class, identityName);
+
+QueryOptions qoEntUser = new QueryOptions();
+
+Filter f1= Filter.eq("identity", identityObject);
+  
+  Filter f2= Filter.eq("application.name", "AD");
+
+qoEntUser.addFilter(f1);
+ qoEntUser.addFilter(f2);
+
+Iterator identityEntitlements = context.search(IdentityEntitlement.class,qoEntUser);   //gives the AD ents  of user
+
+List allEntsBelongingToUser = new ArrayList();
+   System.out.println("********************");
+
+
+while(identityEntitlements.hasNext()){
+
+  IdentityEntitlement idEnt = (IdentityEntitlement) identityEntitlements.next();
+ 
+  //allEntsBelongingToUser.add(idEnt.getValue());
+  System.out.println(identityName+"----------------"+idEnt);
+
+}
+ 
+//****************************************************************************************************************************
+//GET ASSIGNED ROLES OF IDENTITY USING FILTERS
+   String identityName = "Chandana";
+  Identity identityObject = context.getObjectByName(Identity.class, identityName);
+  QueryOptions qoEntUser = new QueryOptions();
+  Filter f1= Filter.eq("identity", identityObject);
+  
+  Filter f2= Filter.eq("IdentityEntitlement.name","assignedRoles");
+  
+  qoEntUser.addFilter(f1);
+  qoEntUser.addFilter(f2);
+  
+  Iterator identityEntitlements = context.search(IdentityEntitlement.class,qoEntUser);   //gives the AD ents  of user
+
+  List allEntsBelongingToUser = new ArrayList();
+  
+  System.out.println("********************");
+
+
+  while(identityEntitlements.hasNext()){
+
+    IdentityEntitlement idEnt = (IdentityEntitlement) identityEntitlements.next();  
+    
+    System.out.println(identityName+"----------------"+idEnt.getValue());
+
+  }
+
+
+  
+ //***********************************************************************************************************************
+  
+  // //getting the requester identity  from workitem and identity table where the owner of that requested items is raymond
+  //and output ===Richard
+  
+   //1.using subquery
+  QueryOptions qoEntUser = new QueryOptions();
+
+Filter f1= 
+  Filter.subquery("name", WorkItem.class, "requester.name", Filter.ignoreCase(Filter.eq("owner.name", "Raymond")));
+  
+
+qoEntUser.addFilter(f1);
+
+
+List l=context.getObjects(Identity.class,qoEntUser);  //gives the AD ents  os user
+  System.out.println("*************************WORKITEM IDENTITIES***********************************");
+
+for(Identity i:l)
+{
+  System.out.println(i);
+}
+  
+  //2.using join
+  
+   Filter f8=Filter.and(Filter.join("name","WorkItem.requester.name"),Filter.eq("WorkItem.owner.name","Raymond"));
+  
+
+         qoEntUser6.addFilter(f8);
+
+
+          List l=context.getObjects(Identity.class,qoEntUser6);  //gives the AD ents  os user
+          System.out.println("*************************WORKITEM IDENTITIES***********************************");
+
+          for(Identity i:l)
+           {
+           System.out.println(i);
+            }
+  
+  
+ //****************************************************************************************************************
+  // *****************gets the identities that have status not null in Okta app
+
+Filter f1= Filter.and(Filter.eq("links.application.name","webservices app"),Filter.notnull("status" ));---->doubt not working use collectioncondition
+  
+  //or use collectionCondition
+  Filter f6= Filter.collectionCondition("links",Filter.and(Filter.eq("application.name","webservices app"),Filter.eq("status","Employee")));
+  qoEntUser.addFilter(f6);
+  List l=context.getObjects(Identity.class,qoEntUser);  //gives the AD ents  os user
+  System.out.println("*************************IdentityExterbal Attribute IDENTITIES***********************************");
+
+  for(Identity i:l)
+  {
+    System.out.println(i);
+  } 
+  
+  
+//************************************************************************************************************
+ /* to get identities that have accounts in both AD and salesforce account
+  
+  1.Filter f1=Filter.and(Filter.eq("links.application.name","AD"),Filter.eq("links.application.name","Salesforce_new"));  ----->NOT WORKING
+  2.
+  List f=new ArrayList();
+  Filter f1=Filter.eq("links.application.name","AD");
+  Filter f2=Filter.eq("links.application.name","Salesforce_new");
+  f.add(f1);
+  f.add(f2);
+  
+
+
+qoEntUser.setFilters(f);--------------------->NOT WORKING
+
+*/
+
+  
+  
+ Filter f1= Filter.collectionCondition("links",Filter.and(Filter.eq("application.name","AD"),Filter.eq("application.name","Salesforce_new")));
+  
+  
+  
+  
+ //***********************************************************************************************************************************
+ //accessing multi-valued Identity and account (Link) extended attribute
+  
+  
+  //1. it give identities have costcenetre==R03e,L08 also---->(not recommended)
+  String attributeName="costcenter";
+  List attributeValue1=new ArrayList();
+  attributeValue1.add("R03");
+  attributeValue1.add("L08");
+
+
+  QueryOptions qoEntUser = new QueryOptions();
+
+  Filter f3=Filter.and(Filter.join("id","IdentityExternalAttribute.objectId"),Filter.eq("IdentityExternalAttribute.attributeName",attributeName),
+                       Filter.in("IdentityExternalAttribute.value",attributeValue1));
+  //2. It gives crct results
+  String attributeName="costcenter";
+  String attributeValue="R03";
+  String attributeValue2="L08";
+
+
+  QueryOptions qo = new QueryOptions();
+
+  Filter f3=Filter.and(Filter.join("id","IdentityExternalAttribute.objectId"),Filter.eq("IdentityExternalAttribute.attributeName",attributeName),
+                       Filter.eq("IdentityExternalAttribute.value",attributeValue));
+  Filter f4=Filter.and(Filter.join("id","IdentityExternalAttribute.objectId"),Filter.eq("IdentityExternalAttribute.attributeName",attributeName),
+                       Filter.eq("IdentityExternalAttribute.value",attributeValue2));
+  f4=Filter.and(f4,f3);
+  Filter containsAll = Filter.collectionCondition("IdentityExternalAttribute", f4);
+
+ 
+  
+  qo.addFilter(containsAll);
+   List l=context.getObjects(Identity.class,qo);
+ 
+  System.out.println("COstCenter");
+  for(Identity r:l)
+  {
+    System.out.println(r);
+  }
+  
+  
+  
+  
+ 
+  </Source>
+</Rule>

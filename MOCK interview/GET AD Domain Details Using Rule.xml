@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule created="1716984373924" id="0a00141f8fc21e83818fc43e62a4016e" language="beanshell" modified="1716985368351" name="AD-GET DOMAIN DETAILS" significantModified="1716985368351" type="Workflow">
+  <Description>A rule used by a Workflow to determine a step action or variable value.
+
+Note that an Attributes map of all variables from the current WorkflowContext, merged with the arguments from the Step, is also passed into the workflow rule.</Description>
+  <Signature returnType="Object">
+    <Inputs>
+      <Argument name="log" type="org.apache.commons.logging.Log">
+        <Description>
+          The log object associated with the SailPointContext.
+        </Description>
+      </Argument>
+      <Argument name="context" type="sailpoint.api.SailPointContext">
+        <Description>
+          A sailpoint.api.SailPointContext object that can be used to query the database if necessary.
+        </Description>
+      </Argument>
+     </Inputs>
+  </Signature>
+  <Source>
+import sailpoint.object.Identity;
+import java.util.List;
+import java.util.Map;
+  import sailpoint.object.Application;
+  
+  
+  
+ Application application=context.getObjectByName(Application.class,"AD");
+List l=application.getAttributeValue("domainSettings");
+  for(Map map:l)
+  {
+    for(String k:map.keySet())
+    {
+      System.out.println("KEY=="+k+"VAlue==="+map.get(k)+"***");
+    }
+  }
+
+</Source>
+</Rule>

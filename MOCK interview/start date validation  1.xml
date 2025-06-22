@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule created="1716974985306" id="0a0014178fc311ad818fc3af205a0125" language="beanshell" modified="1716983994679" name="date rule in form" significantModified="1716983994679" type="Validation">
+  <Description>This rule is used to validate the Field values on a provisioning plan.</Description>
+  <Signature returnType="Object">
+    <Inputs>
+      <Argument name="log" type="org.apache.commons.logging.Log">
+        <Description>
+          The log object associated with the SailPointContext.
+        </Description>
+      </Argument>
+      <Argument name="context" type="sailpoint.api.SailPointContext">
+        <Description>
+          A sailpoint.api.SailPointContext object that can be used to query the database if necessary.
+        </Description>
+      </Argument>
+      <Argument name="identity">
+        <Description>
+          The Identity object being provisioned.
+        </Description>
+      </Argument>
+      <Argument name="app">
+        <Description>
+          The Application object being processed.
+        </Description>
+      </Argument>
+      <Argument name="form">
+        <Description>
+          The Form object being processed.
+        </Description>
+      </Argument>
+      <Argument name="field">
+        <Description>
+          The Field object being validated.
+        </Description>
+      </Argument>
+      <Argument name="value">
+        <Description>
+          The Object representing the field value.
+        </Description>
+      </Argument>
+      <Argument name="link" type="Link">
+        <Description>
+          The sailpoint.object.Link that is being acted upon. If the link is not applicable,
+          this value will be null.
+        </Description>
+      </Argument>
+    </Inputs>
+    <Returns>
+      <Argument name="value">
+        <Description>
+          An Object (possibly a Collection) of messages resulting from the
+          validation rule.
+        </Description>
+      </Argument>
+    </Returns>
+  </Signature>
+  <Source>
+  import java.util.Calendar;
+import java.util.Date;
+import sailpoint.object.Identity;
+
+
+Calendar currentDate = Calendar.getInstance();
+currentDate.add(Calendar.MONTH, 1);
+
+
+
+
+
+Date formDate = identityModel.get("date");
+if (formDate == null) {
+    return "Date is not provided";
+}
+
+
+
+Calendar formDateCal = Calendar.getInstance();
+formDateCal.setTime(formDate);
+
+
+Calendar now = Calendar.getInstance();
+
+
+if (formDateCal.after(now) &amp;&amp; formDateCal.before(currentDate)) {
+    String UserName = identityModel.get("username");
+    Identity identity = context.getObjectByName(Identity.class, UserName);
+    identity.setAttribute("date", identityModel.get("date"));
+} else {
+    return "Please select an appropriate date within one month from today.";
+}
+
+
+  </Source>
+</Rule>

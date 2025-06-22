@@ -1,0 +1,212 @@
+                                                     
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule created="1717063794460" id="0a00141c8fc810d9818fc8fa3f1c0220" language="beanshell" modified="1717067222497" name="SchedulingWorkflow" significantModified="1717067222497">
+  <Source>
+import sailpoint.object.Workflow;
+import java.util.Date;
+import org.apache.commons.lang.StringUtils;
+import sailpoint.object.Identity;
+import sailpoint.object.WorkflowLaunch;
+import sailpoint.object.SailPointContext;
+import sailpoint.object.Attributes;
+import sailpoint.object.Request;
+import sailpoint.object.RequestDefinition;
+import sailpoint.api.RequestManager;
+import sailpoint.workflow.StandardWorkflowHandler;
+import sailpoint.request.WorkflowRequestExecutor;
+
+String workflowName = "Modified mover-event";
+
+String identityName = "Sample11";
+
+String caseName     = "Run '" + workflowName + "' for: " + identityName;
+
+String requesterId  = "spadmin";
+
+
+
+Workflow eventWorkflow = context.getObject(Workflow.class, workflowName);
+
+if (null == eventWorkflow) {
+
+   log.error("Could not find a workflow named: " + workflowName);
+
+   throw new GeneralException("Invalid worklfow: " + workflowName);
+
+}
+
+
+
+// Simulate the request being submitted by a user. Default: spadmin.
+
+Identity id = context.getObjectByName(Identity.class, requesterId);
+
+if (null == id) {
+
+   log.error("Could not find a requester Identity: " + requesterId);
+
+   throw new GeneralException("Invalid identity: " + requesterId);
+
+}
+
+
+
+// Ask the Request Processor to start the workflow 5 seconds from now.
+
+// Append the time stamp to the workflow case name to ensure it's unique.
+
+long launchTime = System.currentTimeMillis() + 180000;
+  
+
+caseName = caseName + "(" + launchTime + ")";
+
+
+
+// Build out a map of arguments to pass to the Request Scheduler.
+
+Attributes reqArgs = new Attributes();
+
+reqArgs.put(StandardWorkflowHandler.ARG_REQUEST_DEFINITION,
+
+             sailpoint.request.WorkflowRequestExecutor.DEFINITION_NAME);
+
+reqArgs.put(sailpoint.workflow.StandardWorkflowHandler.ARG_WORKFLOW,
+
+            workflowName);
+
+reqArgs.put(sailpoint.workflow.StandardWorkflowHandler.ARG_REQUEST_NAME,
+
+            caseName);
+
+reqArgs.put( "requestName", caseName );          
+
+
+
+// Build a map of arguments to pass to the Workflow case when it launches.
+
+Attributes wfArgs = new Attributes();
+
+wfArgs.put("identityName",identityName);
+
+wfArgs.put("workflow", eventWorkflow.getId());
+
+
+
+reqArgs.putAll(wfArgs);
+
+
+
+// Use the Request Launcher to schedule the workflow reqeust.  This requires
+
+// a Request object to store the properties of the request item.
+
+Request req = new Request();
+
+RequestDefinition reqdef = context.getObject(RequestDefinition.class, "Workflow Request");
+
+req.setDefinition(reqdef);
+
+req.setEventDate( new Date( launchTime ) );
+
+req.setOwner(id);
+
+req.setName(caseName);
+
+req.setAttributes( reqdef, reqArgs );
+
+// Schedule the work flow via the request manager.
+RequestManager.addRequest(context, req);
+  return eventWorkflow.getStartTime(); </Source>
+</Rule>
+
+
+
+
+
+
+
+
+                                                       RULE FOR TERMINATION OF SCHEDULED/PENDING WORKFLOW
+
+
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule created="1717404700497" id="0a00141a8fdc1440818fdd4c0f510293" language="beanshell" modified="1717414071498" name="terminatingWorkflowUsingRule" significantModified="1717414071498">
+  <Source>
+  import sailpoint.object.*;
+ 
+  import sailpoint.api.Terminator;
+ 
+  import java.util.*;
+ 
+  import org.apache.log4j.Logger;
+ 
+  import org.apache.log4j.Level;
+ 
+ 
+  String workflowCaseName = "Ru";
+ 
+  int daysGapToDelete = 0;
+ 
+  int countDeletedWorkflows = 0;
+ 
+ 
+  System.out.println("Delete Old Refresh gestartet -->" + workflowCaseName);
+ 
+ 
+  Terminator term = new Terminator(context);
+  System.out.println("PRINTING TERM  "+term);
+ 
+  Calendar cal = new GregorianCalendar();
+ 
+  cal.add(Calendar.DATE, -daysGapToDelete);
+ 
+  Date cutOffDate = cal.getTime();
+  System.out.println(cutOffDate.toString());
+ 
+ 
+  QueryOptions qo = new QueryOptions();
+ 
+  qo.addFilter(Filter.lt("created", cutOffDate ));
+ 
+  qo.addFilter(Filter.like("name", workflowCaseName, Filter.MatchMode.START));
+ 
+System.out.println("PRINTING QUERY OPTIONS " +qo);
+ 
+  Iterator it = context.search(Request.class, qo,"id");
+ 
+System.out.println("PRINTIG ITERATOR "+it);
+ 
+  while(it.hasNext()){
+ 
+    String id = (String) it.next()[0];
+    System.out.println("String id is"+id);
+ 
+    Request wfCase = context.getObject(Request.class, id);
+    System.out.println("The workflowcase is "+wfCase);
+
+ 
+    if(wfCase != null){
+ 
+    System.out.println("found workflow for termination " + wfCase.getId() + " - " + wfCase.getName() );
+      //term.deleteObject(wfCase);
+ 
+        context.removeObject(wfCase);
+        countDeletedWorkflows++;
+        System.out.println(countDeletedWorkflows);
+ 
+    }else{
+ 
+     System.out.println("workflowcase is null ");
+ 
+    }
+  }
+    context.commitTransaction();
+System.out.println("Delete Old Refresh done -->" + workflowCaseName);
+ 
+  return "done --> deleted --> " + countDeletedWorkflows;
+ 
+ 
+  </Source>
+</Rule>

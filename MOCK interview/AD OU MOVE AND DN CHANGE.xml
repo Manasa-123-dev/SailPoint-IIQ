@@ -1,0 +1,201 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Workflow PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Workflow created="1702019440277" explicitTransitions="true" id="0a0014238fa415ed818fa4b8c0b60022" libraries="Identity" modified="1716465035152" name="AD OU MOVE-On termination user is moved to Disabed OU" significantModified="1716465035152" type="IdentityLifecycle">
+  <Variable input="true" name="trigger">
+    <Description>The IdentityTrigger</Description>
+  </Variable>
+  <Variable input="true" name="event">
+    <Description>The IdentityChangeEvent</Description>
+  </Variable>
+  <Variable input="true" name="identityName">
+    <Description>The name of the identity.</Description>
+  </Variable>
+  <Variable initializer="script:(identityDisplayName != void) ? identityDisplayName :  resolveDisplayName(identityName)" input="true" name="identityDisplayName">
+    <Description>The displayName of the identity being updated.
+
+      Query for this using a projection query and fall back to the name.</Description>
+  </Variable>
+  <Variable initializer="string:AccountsRequest" input="true" name="flow">
+    <Description>What type of LCM flow is this</Description>
+  </Variable>
+  <Variable name="plan">
+    <Description>The provisioning plan which is built during the workflow.</Description>
+  </Variable>
+  <Variable initializer="string:LCM" input="true" name="source">
+    <Description>String version of sailpoint.object.Source to indicate
+
+      where the request originated. Defaults to LCM.</Description>
+  </Variable>
+  <Variable initializer="string:true" input="true" name="trace">
+    <Description>Used for debugging this workflow and when set to true trace will be sent to stdout.</Description>
+  </Variable>
+  <Variable name="project">
+    <Description>ProvisioningProject which is just a compiled version of the ProvisioningPlan.</Description>
+  </Variable>
+  <Variable input="true" name="trigger">
+    <Description>The IdentityTrigger</Description>
+  </Variable>
+  <Variable input="true" name="event">
+    <Description>The IdentityChangeEvent</Description>
+  </Variable>
+  <Variable input="true" name="identityName">
+    <Description>The name of the identity.</Description>
+  </Variable>
+  <Variable initializer="script:(identityDisplayName != void) ? identityDisplayName :  resolveDisplayName(identityName)" input="true" name="identityDisplayName">
+    <Description>The displayName of the identity being updated.
+
+      Query for this using a projection query and fall back to the name.</Description>
+  </Variable>
+  <Variable initializer="AccountsRequest" input="true" name="flow">
+    <Description>What type of LCM flow is this</Description>
+  </Variable>
+  <Variable name="plan">
+    <Description>The provisioning plan which is built during the workflow.</Description>
+  </Variable>
+  <Variable initializer="LCM" input="true" name="source">
+    <Description>String version of sailpoint.object.Source to indicate
+
+      where the request originated. Defaults to LCM.</Description>
+  </Variable>
+  <Variable initializer="true" input="true" name="trace">
+    <Description>Used for debugging this workflow and when set to true trace will be sent to stdout.</Description>
+  </Variable>
+  <Variable name="project">
+    <Description>ProvisioningProject which is just a compiled version of the ProvisioningPlan.</Description>
+  </Variable>
+  <Description>disable account ,remove all the accesses and roles  and delete the account after 2 days when user is terminated</Description>
+  <Step icon="Start" name="Start" posX="28" posY="10">
+    <Transition to="Create Provision Plan"/>
+  </Step>
+  <Step icon="Message" name="Create Provision Plan" posX="154" posY="10" resultVariable="plan">
+    <Description>Process the user that joined and create plan for the user to create in JDBC.</Description>
+    <Script>
+      <Source>
+      
+        import sailpoint.object.Link;
+
+        import sailpoint.object.Identity;
+
+        import sailpoint.object.ProvisioningPlan;
+
+        import sailpoint.object.ProvisioningPlan.AccountRequest;
+
+        import sailpoint.object.ProvisioningPlan.AttributeRequest;
+        import sailpoint.object.ProvisioningPlan.AccountRequest.Operation;
+
+        import sailpoint.object.QueryOptions;
+
+        import java.util.List;
+
+        import java.util.Map;
+
+        import java.util.ArrayList;
+
+        import sailpoint.object.RoleAssignment;
+        
+        import sailpoint.object.RoleDetection;
+        
+        
+      
+        
+        String destinationOU="OU=OIMTraining,DC=idmtdc,DC=com";
+        String newName=identityName+"13";
+        String value="CN="+newName;
+        
+        ProvisioningPlan plan = new ProvisioningPlan();
+        
+        List accreqs = new ArrayList();
+
+        Identity identity = context.getObject(Identity.class, identityName);
+        
+        
+       // AccountRequest acctReq =null;
+        
+        AccountRequest  acctReq1=null;
+       
+       // AttributeRequest ar=null;
+        
+       // AttributeRequest ar1=null;
+        
+        List Links = identity.getLinks();
+
+        for(Link link:Links) {
+        
+        if(link.getApplicationName().equals("AD"))
+        {
+
+       // acctReq = new AccountRequest();
+
+       // acctReq.setOperation(AccountRequest.Operation.Disable);// for AD userAccountControl becomes 514 (inactive) from  512(active)
+
+        //acctReq.setApplication(link.getApplicationName());
+
+       // acctReq.setNativeIdentity(link.getNativeIdentity().toString());
+        //acctReq.add(new AttributeRequest("AC_NewParent", ProvisioningPlan.Operation.Set, destinationOU));
+      
+       // accreqs.add(acctReq);
+
+       
+          acctReq1= new AccountRequest();
+         acctReq1.setOperation(AccountRequest.Operation.Modify);
+ 
+        acctReq1.setApplication(link.getApplicationName());
+ 
+        acctReq1.setNativeIdentity(link.getNativeIdentity().toString());
+        acctReq1.add(new AttributeRequest("AC_NewName",ProvisioningPlan.Operation.Set,value));
+          
+         accreqs.add(acctReq1);
+
+        }
+        }
+        
+      
+     
+
+        plan.setAccountRequests(accreqs);
+
+        plan.setIdentity(identity);
+
+        //Provisioner provisioner = new Provisioner(context);
+
+        // provisioner.execute(plan);
+
+        return plan;
+
+      </Source>
+    </Script>
+    <Transition to="Compile Project"/>
+  </Step>
+  <Step action="call:compileProvisioningProject" icon="Task" name="Compile Project" posX="296" posY="10" resultVariable="project">
+    <Arg name="requester" value="spadmin"/>
+    <Arg name="requireCreateTemplates" value="string:false"/>
+    <Arg name="identityName" value="ref:identityName"/>
+    <Arg name="noApplicationTemplates" value="string:true"/>
+    <Arg name="source" value="UI"/>
+    <Arg name="optimisticProvisioning" value="string:false"/>
+    <Arg name="plan" value="ref:plan"/>
+    <Description>Compile the provisioning plan into a provisioning project.
+
+      If you need to pass in provisioner options like "noFiltering"
+
+      or "noRoleDeprovisioning" you must pass them as explicit
+
+      arguments to the call.
+
+      The evaluation options "requester" and "source" are commonly
+
+      set here.
+
+      You can also pass things into the Template and Field scripts by
+
+      defining Args in this step.</Description>
+    <Transition to="Provision"/>
+  </Step>
+  <Step action="call:provisionProject" icon="Provision" name="Provision" posX="446" posY="10">
+    <Arg name="background" value="true"/>
+    <Arg name="project" value="ref:project"/>
+    <Description>Provision the project.</Description>
+    <Transition to="stop"/>
+  </Step>
+  <Step icon="Stop" name="stop" posX="122" posY="136"/>
+</Workflow>
